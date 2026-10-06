@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#faf6f0">
+<title>拾光日记</title>
+<style>
+  :root {
+    --bg: #faf6f0;
+    --card: #ffffff;
+    --ink: #3a3226;
+    --ink-light: #8a7f6e;
+    --accent: #e8a87c;
+    --accent-deep: #d97f4e;
+    --line: #ece4d8;
+    --shadow: 0 6px 24px rgba(120, 90, 60, .10);
+    --radius: 16px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { font-size: 16px; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    background-image: radial-gradient(circle at 15% 10%, rgba(232,168,124,.12) 0, transparent 40%),
+                      radial-gradient(circle at 90% 90%, rgba(160,196,180,.12) 0, transparent 40%);
+    background-attachment: fixed;
+  }
+
+  /* ---------- Auth ---------- */
+  .auth-wrap {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+  }
+  .auth-card {
+    width: 100%; max-width: 400px; background: var(--card); border-radius: 24px;
+    box-shadow: var(--shadow); padding: 40px 32px 32px; text-align: center;
+  }
+  .logo { font-size: 40px; }
+  .auth-card h1 { font-size: 26px; margin: 10px 0 4px; letter-spacing: 2px; }
+  .auth-card .sub { color: var(--ink-light); font-size: 14px; margin-bottom: 28px; }
+  .field { text-align: left; margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; color: var(--ink-light); margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 13px 16px; border: 1.5px solid var(--line); border-radius: 12px;
+    font-size: 15px; background: #fdfbf8; color: var(--ink); outline: none; transition: border-color .2s;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .btn-main {
+    width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color: #fff; font-weight: 600; cursor: pointer; letter-spacing: 2px; transition: opacity .2s, transform .1s;
+  }
+  .btn-main:active { transform: scale(.98); }
+  .btn-main:disabled { opacity: .6; }
+  .auth-switch { margin-top: 20px; font-size: 14px; color: var(--ink-light); }
+  .auth-switch a { color: var(--accent-deep); text-decoration: none; font-weight: 600; cursor: pointer; }
+  .auth-error { color: #c0392b; font-size: 13px; margin-top: 12px; min-height: 18px; }
+
+  /* ---------- App layout ---------- */
+  #app { display: none; max-width: 720px; margin: 0 auto; padding: 20px 16px 110px; }
+  header.top {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+  }
+  header.top .hello h2 { font-size: 22px; }
+  header.top .hello p { font-size: 13px; color: var(--ink-light); margin-top: 2px; }
+  .avatar {
+    width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-deep)); color: #fff;
+    font-size: 18px; font-weight: 700; cursor: pointer; user-select: none;
+  }
+
+  .toolbar { display: flex; gap: 10px; margin-bottom: 18px; }
+  .toolbar input {
+    flex: 1; padding: 11px 16px; border: 1.5px solid var(--line); border-radius: 12px;
+    font-size: 14px; background: var(--card); color: var(--ink); outline: none;
+  }
+  .toolbar input:focus { border-color: var(--accent); }
+
+  .entry-list { display: flex; flex-direction: column; gap: 14px; }
+  .entry {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 18px 20px; cursor: pointer; transition: transform .15s; position: relative; overflow: hidden;
+  }
+  .entry:active { transform: scale(.99); }
+  .entry::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  .entry.m-happy::before { background: #f6b93b; }
+  .entry.m-calm::before { background: #78c8b4; }
+  .entry.m-sad::before { background: #7ea8d8; }
+  .entry.m-angry::before { background: #e07a7a; }
+  .entry.m-normal::before { background: var(--line); }
+  .entry-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .entry-date {
+    font-size: 12px; color: var(--ink-light); background: #faf5ee;
+    padding: 3px 10px; border-radius: 20px; font-weight: 500;
+  }
+  .entry-mood { font-size: 16px; }
+  .entry-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .entry-body {
+    font-size: 14px; color: var(--ink-light); line-height: 1.7;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    white-space: pre-wrap;
+  }
+  .empty { text-align: center; color: var(--ink-light); padding: 70px 0; font-size: 15px; }
+  .empty .big { font-size: 52px; margin-bottom: 14px; }
+
+  /* ---------- FAB ---------- */
+  .fab {
+    position: fixed; right: 22px; bottom: 28px; width: 58px; height: 58px; border-radius: 50%;
+    border: none; background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+    color: #fff; font-size: 30px; line-height: 1; cursor: pointer; box-shadow: 0 8px 20px rgba(217,127,78,.4);
+    transition: transform .15s; z-index: 50;
+  }
+  .fab:active { transform: scale(.92); }
+
+  /* ---------- Modal / editor ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(50, 38, 25, .45); backdrop-filter: blur(4px);
+    display: none; align-items: flex-end; justify-content: center; z-index: 100; padding: 0;
+  }
+  .overlay.show { display: flex; }
+  .sheet {
+    background: var(--card); width: 100%; max-width: 720px; border-radius: 24px 24px 0 0;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom)); max-height: 92vh; overflow-y: auto;
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (min-width: 640px) {
+    .overlay { align-items: center; padding: 24px; }
+    .sheet { border-radius: 24px; }
+  }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .sheet-head h3 { font-size: 18px; }
+  .close-btn {
+    border: none; background: #f5efe6; width: 32px; height: 32px; border-radius: 50%;
+    font-size: 16px; color: var(--ink-light); cursor: pointer;
+  }
+  .moods { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .mood-chip {
+    padding: 8px 14px; border-radius: 24px; border: 1.5px solid var(--line);
+    background: #fdfbf8; font-size: 14px; cursor: pointer; transition: all .15s;
+  }
+  .mood-chip.sel { border-color: var(--accent-deep); background: #fdeee2; }
+  .sheet input.e-title, .sheet textarea {
+    width: 100%; border: 1.5px solid var(--line); border-radius: 12px; padding: 13px 16px;
+    font-size: 15px; background: #fdfbf8; color: var(--ink); outline: none; font-family: inherit;
+  }
+  .sheet input.e-title { margin-bottom: 12px; font-weight: 600; }
+  .sheet textarea { min-height: 200px; resize: vertical; line-height: 1.8; margin-bottom: 16px; }
+  .sheet input:focus, .sheet textarea:focus { border-color: var(--accent); }
+  .sheet-actions { display: flex; gap: 12px; }
+  .btn-ghost {
+    flex: 1; padding: 13px; border-radius: 12px; border: 1.5px solid var(--line);
+    background: transparent; color: var(--ink-light); font-size: 15px; cursor: pointer;
+  }
+  .btn-ghost.danger { color: #c0392b; border-color: #ecc8c3; }
+  .sheet-actions .btn-main { flex: 1.6; padding: 13px; letter-spacing: 1px; }
+
+  /* ---------- view modal ---------- */
+  .view-date { font-size: 13px; color: var(--ink-light); margin-bottom: 14px; }
+  .view-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .view-mood { font-size: 14px; margin-bottom: 16px; }
+  .view-body { font-size: 15px; line-height: 1.9; white-space: pre-wrap; color: var(--ink); }
+  .view-actions { display: flex; gap: 12px; margin-top: 24px; }
+
+  /* ---------- toast ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
+    background: rgba(58,50,38,.92); color: #fff; font-size: 14px; padding: 11px 22px;
+    border-radius: 24px; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 200;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 480px) {
+    html { font-size: 15px; }
+    .auth-card { padding: 34px 24px 26px; }
+    #app { padding: 16px 14px 100px; }
+    .entry { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 登录 / 注册 -->
+<div class="auth-wrap" id="authWrap">
+  <div class="auth-card">
+    <div class="logo">📖</div>
+    <h1>拾光日记</h1>
+    <p class="sub" id="authSub">记录每一天的小心情</p>
+    <div class="field" id="nicknameField" style="display:none">
+      <label>昵称</label>
+      <input id="nicknameInput" type="text" maxlength="12" placeholder="给自己起个名字吧" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>用户名</label>
+      <input id="usernameInput" type="text" placeholder="请输入用户名" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>密码</label>
+      <input id="passwordInput" type="password" placeholder="请输入密码">
+    </div>
+    <button class="btn-main" id="authBtn" onclick="submitAuth()">登 录</button>
+    <p class="auth-error" id="authError"></p>
+    <p class="auth-switch" id="authSwitch">还没有账号？<a onclick="toggleAuthMode()">去注册</a></p>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div id="app">
+  <header class="top">
+    <div class="hello">
+      <h2 id="helloName">你好 👋</h2>
+      <p id="helloDate"></p>
+    </div>
+    <div class="avatar" id="avatar" title="退出登录"></div>
+  </header>
+
+  <div class="toolbar">
+    <input id="searchInput" type="text" placeholder="🔍 搜索日记标题或内容…" oninput="renderList()">
+  </div>
+
+  <div class="entry-list" id="entryList"></div>
+</div>
+
+<button class="fab" id="fab" style="display:none" onclick="openEditor()">＋</button>
+
+<!-- 编辑 / 查看 弹层 -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeOverlay()">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LS_USERS = 'diary_users';
+const LS_SESSION = 'diary_session';
+const LS_DATA = 'diary_data_';   // + username
+
+let isRegister = false;
+let currentUser = null;
+let editingId = null;
+let viewingId = null;
+
+/* ---------- 简单哈希（本地演示用） ---------- */
+function hash(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
+const MOODS = {
+  happy:  { emoji: '😊', label: '开心',   cls: 'm-happy' },
+  calm:   { emoji: '🌿', label: '平静',   cls: 'm-calm' },
+  normal: { emoji: '🙂', label: '一般',   cls: 'm-normal' },
+  sad:    { emoji: '😔', label: '难过',   cls: 'm-sad' },
+  angry:  { emoji: '😤', label: '烦躁',   cls: 'm-angry' },
+};
+
+/* ---------- 启动 ---------- */
+window.addEventListener('DOMContentLoaded', () => {
+  const sess = localStorage.getItem(LS_SESSION);
+  if (sess) {
+    currentUser = sess;
+    enterApp();
+  }
+  document.getElementById('passwordInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitAuth();
+  });
+});
+
+/* ---------- 认证 ---------- */
+function toggleAuthMode() {
+  isRegister = !isRegister;
+  document.getElementById('authSub').textContent = isRegister ? '创建账号，开始记录生活' : '记录每一天的小心情';
+  document.getElementById('nicknameField').style.display = isRegister ? 'block' : 'none';
+  document.getElementById('authBtn').textContent = isRegister ? '注 册' : '登 录';
+  document.getElementById('authSwitch').innerHTML = isRegister
+    ? '已有账号？<a onclick="toggleAuthMode()">去登录</a>'
+    : '还没有账号？<a onclick="toggleAuthMode()">去注册</a>';
+  document.getElementById('authError').textContent = '';
+}
+
+function submitAuth() {
+  const u = document.getElementById('usernameInput').value.trim();
+  const p = document.getElementById('passwordInput').value;
+  const err = document.getElementById('authError');
+  if (!u || !p) { err.textContent = '请填写用户名和密码'; return; }
+  if (p.length < 4) { err.textContent = '密码至少 4 位'; return; }
+
+  const users = JSON.parse(localStorage.getItem(LS_USERS) || '{}');
+
+  if (isRegister) {
+    if (users[u]) { err.textContent = '该用户名已被注册'; return; }
+    const nick = document.getElementById('nicknameInput').value.trim() || u;
+    users[u] = { pass: hash(p), nick, created: Date.now() };
+    localStorage.setItem(LS_USERS, JSON.stringify(users));
+    toast('注册成功，欢迎加入 ✨');
+    doLogin(u);
+  } else {
+    if (!users[u] || users[u].pass !== hash(p)) { err.textContent = '用户名或密码错误'; return; }
+    doLogin(u);
+  }
+}
+
+function doLogin(u) {
+  currentUser = u;
+  localStorage.setItem(LS_SESSION, u);
+  enterApp();
+}
+
+function logout() {
+  if (!confirm('确定要退出登录吗？')) return;
+  localStorage.removeItem(LS_SESSION);
+  currentUser = null;
+  location.reload();
+}
+
+/* ---------- 主界面 ---------- */
+function enterApp() {
+  const users = JSON.parse(localStorage.getItem(LS_USERS) || '{}');
+  const nick = (users[currentUser] && users[currentUser].nick) || currentUser;
+
+  document.getElementById('authWrap').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('fab').style.display = 'block';
+
+  document.getElementById('helloName').textContent = '你好，' + nick + ' 👋';
+  const d = new Date();
+  const week = ['日','一','二','三','四','五','六'][d.getDay()];
+  document.getElementById('helloDate').textContent =
+    `${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日 · 星期${week}`;
+  document.getElementById('avatar').textContent = nick[0].toUpperCase();
+
+  renderList();
+}
+
+function loadEntries() {
+  try { return JSON.parse(localStorage.getItem(LS_DATA + currentUser) || '[]'); }
+  catch { return []; }
+}
+function saveEntries(list) {
+  localStorage.setItem(LS_DATA + currentUser, JSON.stringify(list));
+}
+
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function renderList() {
+  const list = document.getElementById('entryList');
+  const kw = document.getElementById('searchInput').value.trim().toLowerCase();
+  let entries = loadEntries().sort((a, b) => b.date - a.date);
+
+  if (kw) {
+    entries = entries.filter(e =>
+      (e.title || '').toLowerCase().includes(kw) || (e.body || '').toLowerCase().includes(kw));
+  }
+
+  if (!entries.length) {
+    list.innerHTML = `
+      <div class="empty">
+        <div class="big">🌱</div>
+        ${kw ? '没有找到匹配的日记' : '还没有日记，点击右下角的 ＋ 写下第一篇吧'}
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = entries.map(e => {
+    const m = MOODS[e.mood] || MOODS.normal;
+    return `
+      <div class="entry ${m.cls}" onclick="openView('${e.id}')">
+        <div class="entry-head">
+          <span class="entry-date">${fmtDate(e.date)}</span>
+          <span class="entry-mood" title="${m.label}">${m.emoji}</span>
+        </div>
+        <div class="entry-title">${esc(e.title || '无标题')}</div>
+        <div class="entry-body">${esc(e.body || '')}</div>
+      </div>`;
+  }).join('');
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------- 编辑 ---------- */
+function openEditor(id) {
+  editingId = id || null;
+  const sheet = document.getElementById('sheet');
+  const e = id ? loadEntries().find(x => x.id === id) : null;
+  const today = new Date().toISOString().slice(0, 10);
+  sheet.innerHTML = `
+    <div class="sheet-head">
+      <h3>${id ? '✏️ 编辑日记' : '📝 写日记'}</h3>
+      <button class="close-btn" onclick="closeOverlay()">✕</button>
+    </div>
+    <div class="moods" id="moodBar">
+      ${Object.entries(MOODS).map(([k, m]) =>
+        `<div class="mood-chip ${e && e.mood === k ? 'sel' : ''}" data-mood="${k}"
+              onclick="pickMood(this)">${m.emoji} ${m.label}</div>`).join('')}
+    </div>
+    <input class="e-title" id="eTitle" maxlength="50" placeholder="标题（今天发生了什么？）"
+           value="${e ? esc(e.title || '') : ''}">
+    <textarea id="eBody" placeholder="慢慢写，今天的心情、遇到的人、看到的事……">${e ? esc(e.body || '') : ''}</textarea>
+    <div class="sheet-actions">
+      ${id ? '<button class="btn-ghost danger" onclick="deleteEntry()">删除</button>' : ''}
+      <button class="btn-ghost" onclick="closeOverlay()">取消</button>
+      <button class="btn-main" onclick="saveEntry()">保存</button>
+    </div>`;
+  document.getElementById('overlay').classList.add('show');
+  if (!id) document.getElementById('eTitle').focus();
+  sheet.dataset.date = e ? e.date : today;
+}
+
+function pickMood(el) {
+  document.querySelectorAll('.mood-chip').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function saveEntry() {
+  const title = document.getElementById('eTitle').value.trim();
+  const body = document.getElementById('eBody').value.trim();
+  const moodEl = document.querySelector('.mood-chip.sel');
+  const mood = moodEl ? moodEl.dataset.mood : 'normal';
+  if (!title && !body) { toast('写点内容再保存吧 🙂'); return; }
+
+  const entries = loadEntries();
+  if (editingId) {
+    const e = entries.find(x => x.id === editingId);
+    if (e) Object.assign(e, { title, body, mood });
+  } else {
+    entries.push({ id: 'e' + Date.now(), date: Date.now(), title, body, mood });
+  }
+  saveEntries(entries);
+  closeOverlay();
+  renderList();
+  toast(editingId ? '已更新 ✅' : '已保存 ✅');
+}
+
+function deleteEntry() {
+  if (!confirm('确定删除这篇日记吗？删除后无法恢复。')) return;
+  saveEntries(loadEntries().filter(x => x.id !== editingId));
+  closeOverlay();
+  renderList();
+  toast('已删除');
+}
+
+/* ---------- 查看 ---------- */
+function openView(id) {
+  viewingId = id;
+  const e = loadEntries().find(x => x.id === id);
+  if (!e) return;
+  const m = MOODS[e.mood] || MOODS.normal;
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = `
+    <div class="sheet-head">
+      <h3>📖 日记</h3>
+      <button class="close-btn" onclick="closeOverlay()">✕</button>
+    </div>
+    <div class="view-date">${fmtDate(e.date)} · ${m.emoji} ${m.label}</div>
+    <div class="view-title">${esc(e.title || '无标题')}</div>
+    <div class="view-body">${esc(e.body || '（无内容）')}</div>
+    <div class="view-actions">
+      <button class="btn-ghost danger" onclick="deleteEntry()">删除</button>
+      <button class="btn-main" onclick="openEditor('${e.id}')">编辑</button>
+    </div>`;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeOverlay() {
+  document.getElementById('overlay').classList.remove('show');
+  editingId = null;
+  viewingId = null;
+}
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+</script>
+</body>
+</html>
